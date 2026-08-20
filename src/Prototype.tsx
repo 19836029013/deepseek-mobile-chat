@@ -4,7 +4,8 @@ import {
   GearIcon, GlobeIcon, HamburgerMenuIcon, ImageIcon, LightningBoltIcon,
   MagicWandIcon, PaperPlaneIcon, PersonIcon, PlusIcon, ReaderIcon,
 } from "@radix-ui/react-icons";
-import { BottomSheet, KeyboardTextarea, MobileScroll, useKeyboard, useKeyboardInsets } from "./mobile";
+import "./standalone.css";
+import { BottomSheet, MobileScroll, useKeyboard, useKeyboardInsets } from "./mobile";
 
 type Role = "user" | "assistant";
 type Message = { id: string; role: Role; content: string; reasoning?: string };
@@ -24,7 +25,9 @@ function IconButton({ label, children, onClick }: { label: string; children: Rea
 
 export default function Prototype() {
   const keyboard = useKeyboard();
-  const { bottomInset, isKeyboardVisible } = useKeyboardInsets();
+  const { isKeyboardVisible } = useKeyboardInsets();
+  // The deployed page uses the phone's native keyboard, not the prototype's simulated dock.
+  const bottomInset = 0;
   const [chats, setChats] = useState<Chat[]>(loadChats);
   const [activeId, setActiveId] = useState<string | null>(() => loadChats()[0]?.id ?? null);
   const [model, setModel] = useState(() => localStorage.getItem(MODEL_KEY) || "deepseek-v4-flash");
@@ -82,7 +85,7 @@ export default function Prototype() {
     <MobileScroll className="app-scroll"><div className="app-scroll-content"><main className="conversation" aria-label="DeepSeek 对话"><button className="new-chat-button" onClick={startNewChat}><PlusIcon /> 新对话</button>{!activeChat?.messages.length ? <div className="empty-state"><div className="empty-mark"><LightningBoltIcon /></div><h1>有什么可以帮你？</h1><p>原版 DeepSeek API 对话</p></div> : <div className="message-list">{activeChat.messages.map((message) => <MessageBubble key={message.id} message={message} />)}</div>}</main></div></MobileScroll>
     <section className="composer-stack" style={{ bottom: bottomInset }}>
       <div className="control-row"><button className="control-tile" onClick={() => setDepth(depth === "low" ? "medium" : depth === "medium" ? "high" : "low")}><BrainGlyph /><span><b>思考深度</b><small>{depth === "low" ? "低" : depth === "medium" ? "中" : "高"}</small></span><ChevronDownIcon /></button><button className={`control-tile deep-toggle ${deepThinking ? "on" : ""}`} onClick={() => setDeepThinking((current) => !current)}><MagicWandIcon /><span><b>深度思考</b><small>{deepThinking ? "已开启" : "已关闭"}</small></span><span className="switch"><span /></span></button></div>
-      <div className="composer"><KeyboardTextarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder="输入你的问题…" rows={1} aria-label="输入消息" /><div className="composer-footer"><div className="composer-tools"><button aria-label="添加图片"><ImageIcon /> 图片</button><button aria-label="联网搜索"><GlobeIcon /> 联网搜索</button></div><button className="send-button" aria-label="发送消息" disabled={busy || !draft.trim()} onClick={() => void send()}>{busy ? <span className="spinner" /> : <PaperPlaneIcon />}</button></div></div><p className="disclaimer">原版 API · 不附加系统提示词</p>
+      <div className="composer"><textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void send(); } }} placeholder="输入你的问题…" rows={1} aria-label="输入消息" /><div className="composer-footer"><div className="composer-tools"><button aria-label="添加图片"><ImageIcon /> 图片</button><button aria-label="联网搜索"><GlobeIcon /> 联网搜索</button></div><button className="send-button" aria-label="发送消息" disabled={busy || !draft.trim()} onClick={() => void send()}>{busy ? <span className="spinner" /> : <PaperPlaneIcon />}</button></div></div><p className="disclaimer">原版 API · 不附加系统提示词</p>
     </section>
     <nav className="bottom-tabs" aria-label="主导航"><button className="active"><ChatBubbleIcon /><span>对话</span></button><button onClick={() => { keyboard.hide(); setHistoryOpen(true); }}><ClockIcon /><span>历史</span></button><button onClick={() => { keyboard.hide(); setSettingsOpen(true); }}><PersonIcon /><span>我</span></button></nav>
     <BottomSheet open={historyOpen} onOpenChange={setHistoryOpen} title="历史对话" description="只保存在当前浏览器"><div className="sheet-actions"><button onClick={startNewChat}><PlusIcon /> 新建对话</button></div><div className="history-list">{chats.length ? chats.map((chat) => <button className={chat.id === activeId ? "selected" : ""} key={chat.id} onClick={() => selectChat(chat.id)}><ChatBubbleIcon /><span>{chat.title}</span>{chat.id === activeId ? <CheckIcon /> : null}</button>) : <p className="sheet-empty">还没有历史对话</p>}</div></BottomSheet>
